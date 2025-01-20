@@ -80,6 +80,21 @@ class LinuxDoBrowser:
         page.close()
 
     def browse_post(self, page):
+        # 获取帖子标题
+        try:
+            title = page.locator(".title-wrapper .fancy-title span[dir='auto']").inner_text()
+            # 获取帖子分类和标签
+            category = page.locator(".badge-category__name").inner_text()
+            tags = page.locator(".discourse-tags .discourse-tag").all_inner_texts()
+            
+            logger.info(f"正在浏览帖子：{title}")
+            logger.info(f"分类：{category}")
+            if tags:
+                logger.info(f"标签：{', '.join(tags)}")
+        except Exception as e:
+            logger.warning(f"获取帖子信息失败: {str(e)}")
+            title = "未知标题"
+            
         prev_url = None
         # 开始自动滚动，最多滚动10次
         for _ in range(10):
