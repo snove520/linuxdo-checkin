@@ -172,29 +172,7 @@ class LinuxDoBrowser:
         except Exception as e:
             logger.error(f"点赞失败: {str(e)}")
 
-    def send_push_message(self, title, content):
-        """发送推送消息到 PushPlus"""
-        push_token = os.environ.get("PUSH_TOKEN")
-        if not push_token:
-            logger.warning("未设置 PUSH_TOKEN，跳过推送")
-            return
-        
-        url = "https://www.pushplus.plus/send"
-        data = {
-            "token": push_token,
-            "title": title,
-            "content": content,
-            "template": "markdown"  # 使用 markdown 模板以更好地显示表格
-        }
-        
-        try:
-            response = requests.post(url, json=data)
-            if response.status_code == 200:
-                logger.success("推送消息发送成功")
-            else:
-                logger.error(f"推送消息发送失败: {response.text}")
-        except Exception as e:
-            logger.error(f"推送消息发送异常: {str(e)}")
+    
 
     def print_connect_info(self):
         logger.info("获取连接信息")
@@ -221,19 +199,11 @@ class LinuxDoBrowser:
         minutes = int((elapsed_time % 3600) // 60)
         seconds = int(elapsed_time % 60)
 
-        # 构建统计信息
-        stats = f"""
-## 运行统计
-- 共浏览帖子：{self.browse_count} 篇
-- 点赞帖子：{self.like_count} 篇
-- 用时：{hours}小时{minutes}分{seconds}秒
-
-## Connect 信息
-{table_str}
-"""
-        # 发送推送
-        title = "Linux.do 每日任务完成报告"
-        self.send_push_message(title, stats)
+        # 打印统计信息
+        print(f"\n运行统计:")
+        print(f"- 共浏览帖子：{self.browse_count} 篇")
+        print(f"- 点赞帖子：{self.like_count} 篇")
+        print(f"- 用时：{hours}小时{minutes}分{seconds}秒")
 
         page.close()
 
