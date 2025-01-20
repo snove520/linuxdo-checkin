@@ -109,7 +109,9 @@ class LinuxDoBrowser:
             scroll_distance = random.randint(550, 650)  # 随机滚动 550-650 像素
             logger.info(f"向下滚动 {scroll_distance} 像素...")
             page.evaluate(f"window.scrollBy(0, {scroll_distance})")
-            logger.info(f"已加载页面: {page.url}")
+            # logger.info(f"已加载页面: {page.url}")
+            # logger.info(f"已加载页面: {page.url} | 标题: {title}")
+            logger.info("已加载页面: {} | 标题: {}", page.url, title)
 
             if random.random() < 0.03:  # 33 * 4 = 132
                 logger.success("随机退出浏览")
