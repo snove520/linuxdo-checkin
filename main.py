@@ -212,8 +212,9 @@ class LinuxDoBrowser:
                 requirement = cells[2].text_content().strip()
                 info.append([project, current, requirement])
 
+        username = os.environ.get("USERNAME", "未知用户")
         # 使用 Markdown 格式输出
-        print("# LINUX DO 每日签到报告\n")
+        print(f"# {username} 运行报告\n")
         
         print("## Connect 信息")
         table_str = tabulate(info, headers=["项目", "当前", "要求"], tablefmt="github")
