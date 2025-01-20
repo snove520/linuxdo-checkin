@@ -197,8 +197,11 @@ class LinuxDoBrowser:
                 requirement = cells[2].text_content().strip()
                 info.append([project, current, requirement])
 
+        # 使用 Markdown 格式输出
+        print("# LINUX DO 每日签到报告\n")
+        
+        print("## Connect 信息")
         table_str = tabulate(info, headers=["项目", "当前", "要求"], tablefmt="github")
-        print("--------------Connect Info-----------------")
         print(table_str)
 
         # 计算运行时间
@@ -208,10 +211,13 @@ class LinuxDoBrowser:
         seconds = int(elapsed_time % 60)
 
         # 打印统计信息
-        print(f"\n运行统计:")
+        print("\n## 运行统计")
         print(f"- 共浏览帖子：{self.browse_count} 篇")
         print(f"- 点赞帖子：{self.like_count} 篇")
         print(f"- 用时：{hours}小时{minutes}分{seconds}秒")
+        
+        # 添加时间戳
+        print(f"\n\n> 执行时间：{time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         page.close()
 

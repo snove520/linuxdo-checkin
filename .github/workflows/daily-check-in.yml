@@ -32,22 +32,26 @@ jobs:
       - name: Send PUSH+ Notification
         env:
           PUSH_PLUS_TOKEN: ${{ secrets.PUSH_PLUS_TOKEN }}
-        if: always()  # 无论成功失败都发送通知
+        if: always()
         run: |
           if [ ${{ job.status }} == 'success' ]; then
             STATUS="✅ 成功"
+            # 直接读取文件内容，保持换行符
             CONTENT=$(cat output.txt)
           else
             STATUS="❌ 失败"
-            CONTENT="签到脚本执行失败，请检查日志"
+            CONTENT="## LINUX DO 签到失败\n\n请检查 GitHub Actions 日志以获取详细信息。"
           fi
-          
+            
+          # 发送请求
           curl -s "http://www.pushplus.plus/send" \
-          -d "token=${{ env.PUSH_PLUS_TOKEN }}" \
-          -d "title=LINUX DO 每日签到状态：${STATUS}" \
-          -d "content=${CONTENT}" \
-          -d "template=markdown" \
-          -H "Content-Type: application/x-www-form-urlencoded"
+          -H "Content-Type: application/json" \
+          -d "{
+            \"token\": \"${{ env.PUSH_PLUS_TOKEN }}\",
+            \"title\": \"LINUX DO 每日签到状态：${STATUS}\",
+            \"content\": \"${CONTENT}\",
+            \"template\": \"markdown\"
+          }"
 
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
