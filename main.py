@@ -93,7 +93,9 @@ class LinuxDoBrowser:
                 "#main-outlet .topic-title h1",           # 第一种形式
                 "h1 .fancy-title span[dir='auto']",       # 第二种形式
                 "#main-outlet h1",                        # 第三种形式
-                ".topic-title"                            # 第四种形式
+                ".topic-title",                           # 第四种形式
+                ".title-wrapper h1 a",                    # 第五种形式（分页帖子）
+                ".title-wrapper h1 a .fancy-title span"   # 第六种形式（分页帖子的另一种可能）
             ]
             
             # 依次尝试不同的选择器
@@ -103,6 +105,12 @@ class LinuxDoBrowser:
                     title = title_element.inner_text().strip()
                     if title:  # 如果成功获取到非空标题
                         break
+            
+            # 如果还是获取不到标题，尝试直接获取链接标题
+            if not title:
+                title_element = page.locator(".title-wrapper h1").first
+                if title_element:
+                    title = title_element.inner_text().strip()
             
             if not title:
                 title = "未知标题"
