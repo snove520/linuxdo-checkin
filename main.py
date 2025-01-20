@@ -87,14 +87,33 @@ class LinuxDoBrowser:
     def browse_post(self, page):
         # 获取帖子标题和信息
         try:
-            # 使用更精确的选择器
-            title = page.locator("h1 .fancy-title span[dir='auto']").inner_text()
-            # 使用 first 获取第一个分类名称
+            # 尝试多种可能的标题选择器
+            title = None
+            title_selectors = [
+                "#main-outlet .topic-title h1",           # 第一种形式
+                "h1 .fancy-title span[dir='auto']",       # 第二种形式
+                "#main-outlet h1",                        # 第三种形式
+                ".topic-title"                            # 第四种形式
+            ]
+            
+            # 依次尝试不同的选择器
+            for selector in title_selectors:
+                title_element = page.locator(selector)
+                if title_element.count() > 0:
+                    title = title_element.inner_text().strip()
+                    if title:  # 如果成功获取到非空标题
+                        break
+            
+            if not title:
+                title = "未知标题"
+                logger.warning("无法获取标题")
+            
+            # 获取分类（使用 first 避免多个元素的问题）
             category = page.locator(".title-wrapper .badge-category__name").first.inner_text()
             # 获取所有标签
             tags = page.locator(".discourse-tags .discourse-tag").all_inner_texts()
             
-            logger.info(f"正在浏览帖子：{title}")
+            logger.info(f"已加载页面: {page.url} | 标题: {title}")
             logger.info(f"分类：{category}")
             if tags:
                 logger.info(f"标签：{', '.join(tags)}")
