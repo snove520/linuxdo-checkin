@@ -3,6 +3,7 @@ import random
 import time
 import functools
 import sys
+import requests
 
 from loguru import logger
 from playwright.sync_api import sync_playwright
@@ -127,6 +128,30 @@ class LinuxDoBrowser:
         except Exception as e:
             logger.error(f"点赞失败: {str(e)}")
 
+    def send_push_message(self, title, content):
+        """发送推送消息到 PushPlus"""
+        push_token = os.environ.get("PUSH_TOKEN")
+        if not push_token:
+            logger.warning("未设置 PUSH_TOKEN，跳过推送")
+            return
+        
+        url = "https://www.pushplus.plus/send"
+        data = {
+            "token": push_token,
+            "title": title,
+            "content": content,
+            "template": "markdown"  # 使用 markdown 模板以更好地显示表格
+        }
+        
+        try:
+            response = requests.post(url, json=data)
+            if response.status_code == 200:
+                logger.success("推送消息发送成功")
+            else:
+                logger.error(f"推送消息发送失败: {response.text}")
+        except Exception as e:
+            logger.error(f"推送消息发送异常: {str(e)}")
+
     def print_connect_info(self):
         logger.info("获取连接信息")
         page = self.context.new_page()
@@ -145,6 +170,10 @@ class LinuxDoBrowser:
 
         print("--------------Connect Info-----------------")
         print(tabulate(info, headers=["项目", "当前", "要求"], tablefmt="pretty"))
+
+        # 发送推送
+        title = "Linux.do Connect 信息"
+        self.send_push_message(title, table_str)
 
         page.close()
 
