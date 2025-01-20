@@ -40,6 +40,10 @@ HOME_URL = "https://linux.do/"
 
 class LinuxDoBrowser:
     def __init__(self) -> None:
+        self.browse_count = 0  # 浏览帖子计数
+        self.like_count = 0    # 点赞计数
+        self.start_time = time.time()  # 记录开始时间
+
         self.pw = sync_playwright().start()
         self.browser = self.pw.firefox.launch(headless=True, timeout=30000)
         self.context = self.browser.new_context()
@@ -77,6 +81,7 @@ class LinuxDoBrowser:
         if random.random() < 0.3:  # 0.3 * 30 = 9
             self.click_like(page)
         self.browse_post(page)
+        self.browse_count += 1  # 增加浏览计数
         page.close()
 
     def browse_post(self, page):
@@ -94,7 +99,7 @@ class LinuxDoBrowser:
         except Exception as e:
             logger.warning(f"获取帖子信息失败: {str(e)}")
             title = "未知标题"
-            
+
         prev_url = None
         # 开始自动滚动，最多滚动10次
         for _ in range(10):
@@ -136,6 +141,7 @@ class LinuxDoBrowser:
             if like_button:
                 logger.info("找到未点赞的帖子，准备点赞")
                 like_button.click()
+                self.like_count += 1  # 增加点赞计数
                 logger.info("点赞成功")
                 time.sleep(random.uniform(1, 2))
             else:
@@ -174,7 +180,6 @@ class LinuxDoBrowser:
         rows = page.query_selector_all("table tr")
 
         info = []
-
         for row in rows:
             cells = row.query_selector_all("td")
             if len(cells) >= 3:
@@ -183,12 +188,29 @@ class LinuxDoBrowser:
                 requirement = cells[2].text_content().strip()
                 info.append([project, current, requirement])
 
+        table_str = tabulate(info, headers=["项目", "当前", "要求"], tablefmt="github")
         print("--------------Connect Info-----------------")
-        print(tabulate(info, headers=["项目", "当前", "要求"], tablefmt="pretty"))
+        print(table_str)
 
+        # 计算运行时间
+        elapsed_time = time.time() - self.start_time
+        hours = int(elapsed_time // 3600)
+        minutes = int((elapsed_time % 3600) // 60)
+        seconds = int(elapsed_time % 60)
+
+        # 构建统计信息
+        stats = f"""
+## 运行统计
+- 共浏览帖子：{self.browse_count} 篇
+- 点赞帖子：{self.like_count} 篇
+- 用时：{hours}小时{minutes}分{seconds}秒
+
+## Connect 信息
+{table_str}
+"""
         # 发送推送
-        title = "Linux.do Connect 信息"
-        self.send_push_message(title, table_str)
+        title = "Linux.do 每日任务完成报告"
+        self.send_push_message(title, stats)
 
         page.close()
 
