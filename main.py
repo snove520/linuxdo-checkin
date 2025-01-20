@@ -95,15 +95,23 @@ class LinuxDoBrowser:
                 "#main-outlet h1",                        # 第三种形式
                 ".topic-title",                           # 第四种形式
                 ".title-wrapper h1 a",                    # 第五种形式（分页帖子）
-                ".title-wrapper h1 a .fancy-title span"   # 第六种形式（分页帖子的另一种可能）
+                ".title-wrapper h1 a .fancy-title span",  # 第六种形式（分页帖子的另一种可能）
+                "h1.topic-title",                        # 第七种形式
+                ".topic-title h1 span"                   # 第八种形式（针对欢迎帖）
             ]
+            
+            # 添加调试日志
+            logger.debug("开始尝试获取标题...")
             
             # 依次尝试不同的选择器
             for selector in title_selectors:
                 title_element = page.locator(selector)
-                if title_element.count() > 0:
+                count = title_element.count()
+                logger.debug(f"选择器 '{selector}' 找到 {count} 个元素")
+                if count > 0:
                     title = title_element.inner_text().strip()
                     if title:  # 如果成功获取到非空标题
+                        logger.debug(f"成功使用选择器 '{selector}' 获取标题: {title}")
                         break
             
             # 如果还是获取不到标题，尝试直接获取链接标题
@@ -111,10 +119,12 @@ class LinuxDoBrowser:
                 title_element = page.locator(".title-wrapper h1").first
                 if title_element:
                     title = title_element.inner_text().strip()
+                    logger.debug(f"使用备用选择器获取标题: {title}")
             
             if not title:
                 title = "未知标题"
-                logger.warning("无法获取标题")
+                logger.warning("无法获取标题，页面内容：")
+                logger.warning(page.content())  # 打印页面内容以便调试
             
             # 获取分类（使用 first 避免多个元素的问题）
             category = page.locator(".title-wrapper .badge-category__name").first.inner_text()
