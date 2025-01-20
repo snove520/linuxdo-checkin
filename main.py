@@ -94,37 +94,42 @@ class LinuxDoBrowser:
                 "h1 .fancy-title span[dir='auto']",       # 第二种形式
                 "#main-outlet h1",                        # 第三种形式
                 ".topic-title",                           # 第四种形式
-                ".title-wrapper h1 a",                    # 第五种形式（分页帖子）
-                ".title-wrapper h1 a .fancy-title span",  # 第六种形式（分页帖子的另一种可能）
-                "h1.topic-title",                        # 第七种形式
-                ".topic-title h1 span"                   # 第八种形式（针对欢迎帖）
+                ".title-wrapper h1 a[data-topic-id]",     # 第五种形式（分页帖子，使用更精确的选择器）
+                ".title-wrapper h1 a .fancy-title span",  # 第六种形式
+                "h1.topic-title",                         # 第七种形式
+                ".topic-title h1 span"                    # 第八种形式
             ]
-            
-            # 添加调试日志
-            logger.debug("开始尝试获取标题...")
             
             # 依次尝试不同的选择器
             for selector in title_selectors:
-                title_element = page.locator(selector)
-                count = title_element.count()
-                logger.debug(f"选择器 '{selector}' 找到 {count} 个元素")
-                if count > 0:
-                    title = title_element.inner_text().strip()
-                    if title:  # 如果成功获取到非空标题
-                        logger.debug(f"成功使用选择器 '{selector}' 获取标题: {title}")
-                        break
+                try:
+                    title_elements = page.locator(selector)
+                    count = title_elements.count()
+                    if count > 0:
+                        # 如果有多个元素，尝试找到包含实际标题的那个
+                        for i in range(count):
+                            element_text = title_elements.nth(i).inner_text().strip()
+                            if element_text and not element_text.startswith("此话题"):  # 排除提示文本
+                                title = element_text
+                                break
+                        if title:  # 如果找到有效标题就退出循环
+                            break
+                except Exception as e:
+                    logger.debug(f"选择器 '{selector}' 尝试失败: {str(e)}")
+                    continue
             
-            # 如果还是获取不到标题，尝试直接获取链接标题
+            # 如果上述方法都失败，尝试直接获取带有 data-topic-id 的链接文本
             if not title:
-                title_element = page.locator(".title-wrapper h1").first
-                if title_element:
-                    title = title_element.inner_text().strip()
-                    logger.debug(f"使用备用选择器获取标题: {title}")
+                try:
+                    topic_link = page.locator("a[data-topic-id]").first
+                    if topic_link:
+                        title = topic_link.inner_text().strip()
+                except Exception as e:
+                    logger.debug(f"备用方法获取标题失败: {str(e)}")
             
             if not title:
                 title = "未知标题"
-                logger.warning("无法获取标题，页面内容：")
-                logger.warning(page.content())  # 打印页面内容以便调试
+                logger.warning("无法获取标题")
             
             # 获取分类（使用 first 避免多个元素的问题）
             category = page.locator(".title-wrapper .badge-category__name").first.inner_text()
