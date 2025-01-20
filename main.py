@@ -85,11 +85,13 @@ class LinuxDoBrowser:
         page.close()
 
     def browse_post(self, page):
-        # 获取帖子标题
+        # 获取帖子标题和信息
         try:
-            title = page.locator(".title-wrapper .fancy-title span[dir='auto']").inner_text()
-            # 获取帖子分类和标签
-            category = page.locator(".badge-category__name").inner_text()
+            # 使用更精确的选择器
+            title = page.locator("h1 .fancy-title span[dir='auto']").inner_text()
+            # 使用 first 获取第一个分类名称
+            category = page.locator(".title-wrapper .badge-category__name").first.inner_text()
+            # 获取所有标签
             tags = page.locator(".discourse-tags .discourse-tag").all_inner_texts()
             
             logger.info(f"正在浏览帖子：{title}")
