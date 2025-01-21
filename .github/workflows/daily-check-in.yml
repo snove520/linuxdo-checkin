@@ -25,26 +25,31 @@ jobs:
           playwright install --with-deps firefox
 
       - name: Execute script
+        id: run_script  # 添加 ID 以便后续引用
+        continue-on-error: true  # 允许脚本失败继续执行
         env:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
-          python main.py > output.txt
-        timeout-minutes: 30  # 设置超时为 30 分钟
+          if python main.py > output.txt 2>&1; then
+            echo "status=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+          fi
 
       - name: Send PUSH+ Notification
         env:
           PUSH_PLUS_TOKEN: ${{ secrets.PUSH_PLUS_TOKEN }}
         if: always()
         run: |
-          if [ ${{ job.status }} == 'success' ]; then
+          if [ "${{ steps.run_script.outputs.status }}" = "success" ]; then
             STATUS="✅ 成功"
-            CONTENT=$(cat output.txt)
+            CONTENT=$(cat output.txt || echo "签到完成")
           else
             STATUS="❌ 失败"
-            CONTENT="## Linux.do浏览失败\n\n请检查 GitHub Actions 日志以获取详细信息。\n\n[查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            CONTENT="签到脚本执行失败，请检查日志\n\n$(cat output.txt || echo '未能获取详细错误信息')"
           fi
-            
+          
           curl -s "http://www.pushplus.plus/send" \
           -H "Content-Type: application/json" \
           -d "{

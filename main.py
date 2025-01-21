@@ -114,17 +114,36 @@ class LinuxDoBrowser:
                 "h1 .fancy-title span[dir='auto']",
                 "#main-outlet h1",
                 ".topic-title",
-                ".title-wrapper h1 a",
+                ".title-wrapper h1 a[data-topic-id]",  # 使用更精确的选择器
                 ".title-wrapper h1 a .fancy-title span"
             ]
             
             # 依次尝试不同的选择器
             for selector in title_selectors:
-                title_element = page.locator(selector)
-                if title_element.count() > 0:
-                    title = title_element.inner_text().strip()
-                    if title:  # 如果成功获取到非空标题
-                        break
+                try:
+                    title_elements = page.locator(selector)
+                    count = title_elements.count()
+                    if count > 0:
+                        # 如果有多个元素，遍历它们找到实际的标题
+                        for i in range(count):
+                            element_text = title_elements.nth(i).inner_text().strip()
+                            if element_text and not element_text.startswith("此话题"):  # 排除提示文本
+                                title = element_text
+                                break
+                        if title:  # 如果找到有效标题就退出循环
+                            break
+                except Exception as e:
+                    logger.debug(f"选择器 '{selector}' 尝试失败: {str(e)}")
+                    continue
+            
+            # 如果上述方法都失败，尝试直接获取带有 data-topic-id 的链接文本
+            if not title:
+                try:
+                    topic_link = page.locator("a[data-topic-id]").first
+                    if topic_link:
+                        title = topic_link.inner_text().strip()
+                except Exception as e:
+                    logger.debug(f"备用方法获取标题失败: {str(e)}")
             
             if not title:
                 title = "未知标题"
