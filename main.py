@@ -54,23 +54,82 @@ class LinuxDoBrowser:
         self.page = self.context.new_page()
         self.page.goto(HOME_URL)
 
-    def login(self):
-        logger.info("开始登录")
-        self.page.click(".login-button .d-button-label")
-        time.sleep(2)
-        self.page.fill("#login-account-name", USERNAME)
-        time.sleep(2)
-        self.page.fill("#login-account-password", PASSWORD)
-        time.sleep(2)
-        self.page.click("#login-button")
-        time.sleep(10)
-        user_ele = self.page.query_selector("#current-user")
-        if not user_ele:
-            logger.error("登录失败")
-            return False
-        else:
-            logger.info("登录成功")
-            return True
+    def login(self, max_retries=3):
+        """
+        登录函数，支持重试和错误信息提示
+        :param max_retries: 最大重试次数
+        :return: bool 是否登录成功
+        """
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"开始第 {attempt + 1}/{max_retries} 次登录尝试")
+                
+                # 点击登录按钮
+                login_button = self.page.locator(".login-button .d-button-label")
+                if not login_button.first:
+                    logger.error("找不到登录按钮")
+                    continue
+                login_button.click()
+                time.sleep(2)
+                
+                # 填写用户名
+                if not USERNAME:
+                    logger.error("环境变量 USERNAME 未设置")
+                    return False
+                self.page.fill("#login-account-name", USERNAME)
+                time.sleep(2)
+                
+                # 填写密码
+                if not PASSWORD:
+                    logger.error("环境变量 PASSWORD 未设置")
+                    return False
+                self.page.fill("#login-account-password", PASSWORD)
+                time.sleep(2)
+                
+                # 点击登录
+                self.page.click("#login-button")
+                time.sleep(5)  # 等待登录响应
+                
+                # 检查错误信息
+                error_selectors = [
+                    "#modal-alert .alert-error",  # 通用错误提示
+                    "#login-error",  # 登录错误
+                    ".alert-error",  # 其他错误提示
+                    "#modal-alert"   # 模态框错误
+                ]
+                
+                for selector in error_selectors:
+                    error_element = self.page.locator(selector).first
+                    if error_element and error_element.is_visible():
+                        error_text = error_element.inner_text().strip()
+                        logger.error(f"登录失败: {error_text}")
+                        # 如果是密码错误，直接返回，不需要重试
+                        if "密码" in error_text or "password" in error_text.lower():
+                            return False
+                        time.sleep(5)  # 遇到错误等待longer再重试
+                        continue
+                
+                # 检查是否登录成功
+                user_ele = self.page.locator("#current-user").first
+                if user_ele and user_ele.is_visible():
+                    username = user_ele.get_attribute("title") or "未知用户"
+                    logger.success(f"登录成功！用户名: {username}")
+                    return True
+                
+                # 如果没有明确的错误信息但也没有登录成功
+                logger.warning(f"登录状态未知，尝试刷新页面")
+                self.page.reload()
+                time.sleep(5)
+                
+            except Exception as e:
+                logger.error(f"登录过程出错: {str(e)}")
+                if attempt < max_retries - 1:  # 如果不是最后一次尝试
+                    logger.info("等待 10 秒后重试...")
+                    time.sleep(10)
+                continue
+        
+        logger.error(f"登录失败，已尝试 {max_retries} 次")
+        return False
 
     # def click_topic(self):
     #     topic_list = self.page.query_selector_all("#list-area .title")
