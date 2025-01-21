@@ -523,9 +523,27 @@ class LinuxDoBrowser:
                             logger.debug(f"检查限制弹窗失败: {str(e)}")
                             continue
 
-                    # 如果没有弹窗，说明点赞成功
+                    # 点赞成功后重新获取点赞数
+                    time.sleep(1)  # 等待点赞数更新
+                    current_likes = 0
+                    for selector in counter_selectors:
+                        counter = page.locator(selector).first
+                        if counter and counter.is_visible():
+                            try:
+                                likes_text = counter.inner_text().strip()
+                                if likes_text:
+                                    current_likes = int(''.join(filter(str.isdigit, likes_text)) or 0)
+                                    break
+                            except:
+                                continue
+                    
                     self.like_count += 1
-                    logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count}")
+                    # 获取楼层号
+                    try:
+                        floor_number = page.locator('.linuxfloor').first.inner_text().strip('#')
+                        logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 当前帖子点赞数: {current_likes} | 楼层: {floor_number}")
+                    except:
+                        logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 当前帖子点赞数: {current_likes}")
                     time.sleep(random.uniform(1, 2))
                 finally:
                     # 恢复页面滚动
