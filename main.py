@@ -70,21 +70,55 @@ class LinuxDoBrowser:
             logger.info("登录成功")
             return True
 
+    # def click_topic(self):
+    #     topic_list = self.page.query_selector_all("#list-area .title")
+    #     logger.info(f"发现 {len(topic_list)} 个主题帖")
+    #     for topic in topic_list:
+    #         self.click_one_topic(topic.get_attribute("href"))
+
     def click_topic(self):
         topic_list = self.page.query_selector_all("#list-area .title")
-        logger.info(f"发现 {len(topic_list)} 个主题帖")
-        for topic in topic_list:
-            self.click_one_topic(topic.get_attribute("href"))
+        total_topics = len(topic_list)
+        logger.info("=" * 50)
+        logger.info(f"共发现 {total_topics} 个主题帖")
+        logger.info("=" * 50)
+        
+        for index, topic in enumerate(topic_list, 1):
+            logger.info("\n" + "-" * 30)
+            logger.success(f"进度：{index}/{total_topics} ({(index/total_topics*100):.1f}%)")
+            topic_url = topic.get_attribute("href")
+            self.click_one_topic(topic_url, index, total_topics)
+            
+            if random.random() < 0.1:  # 10% 概率提前退出
+                logger.info("随机退出浏览")
+                break
 
     @retry_decorator()
-    def click_one_topic(self, topic_url):
+    # def click_one_topic(self, topic_url):
+    #     page = self.context.new_page()
+    #     page.goto(HOME_URL + topic_url)
+    #     if random.random() < 0.3:  # 0.3 * 30 = 9
+    #         self.click_like(page)
+    #     self.browse_post(page)
+    #     self.browse_count += 1  # 增加浏览计数
+    #     page.close()
+    def click_one_topic(self, topic_url, current_index, total_topics):
         page = self.context.new_page()
         page.goto(HOME_URL + topic_url)
-        if random.random() < 0.3:  # 0.3 * 30 = 9
-            self.click_like(page)
-        self.browse_post(page)
-        self.browse_count += 1  # 增加浏览计数
-        page.close()
+        
+        try:
+            # 获取标题等信息
+            title = self.get_title(page)  # 假设您有这个方法获取标题
+            logger.info(f"[{current_index}/{total_topics}] 正在浏览: {title}")
+            
+            if random.random() < 0.3:
+                self.click_like(page)
+            self.browse_post(page)
+            self.browse_count += 1
+        except Exception as e:
+            logger.error(f"浏览帖子时出错: {str(e)}")
+        finally:
+            page.close()
 
     def browse_post(self, page):
         # 获取帖子标题和信息
@@ -263,7 +297,7 @@ class LinuxDoBrowser:
         # 获取并添加一言
         yiyan = self.get_yiyan()
         # print("\n## 今日一言")
-        print(f"> {yiyan}")
+        print(f"> {yiyan}\n")  # 添加一个空行
 
         page.close()
 
