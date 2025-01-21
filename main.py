@@ -538,15 +538,33 @@ class LinuxDoBrowser:
                                     break
                             except:
                                 continue
+                    # 验证点赞是否真的成功
+                    if current_likes <= likes_count:  # 如果点赞数没有增加
+                        logger.warning(f"点赞可能失败 ❌ | 点赞前数量: {likes_count} -> 点赞后数量: {current_likes}")
+                        return False  # 返回 False 以便重试
                     
                     self.like_count += 1
                     # 获取楼层号
                     try:
-                        floor_number = page.locator('.linuxfloor').first.inner_text().strip('#')
-                        logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 点赞前数量: {likes_count} -> 点赞后数量: {current_likes} | 楼层: {floor_number}")
+                        floor_selectors = [
+                            '.linuxfloor',  # 原有的选择器
+                            '.post-infos .linuxfloor',  # 新增的选择器
+                            'div.post-infos span.linuxfloor'  # 更精确的选择器
+                        ]
+                        
+                        floor_number = None
+                        for selector in floor_selectors:
+                            floor_element = page.locator(selector).first
+                            if floor_element and floor_element.is_visible():
+                                floor_number = floor_element.inner_text().strip('#')
+                                break
+                        
+                        if floor_number:
+                            logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 点赞前数量: {likes_count} -> 点赞后数量: {current_likes} | 楼层: {floor_number}")
+                        else:
+                            logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 点赞前数量: {likes_count} -> 点赞后数量: {current_likes}")
                     except:
                         logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 点赞前数量: {likes_count} -> 点赞后数量: {current_likes}")
-                    time.sleep(random.uniform(1, 2))
                 finally:
                     # 恢复页面滚动
                     page.evaluate("""
