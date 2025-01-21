@@ -183,7 +183,8 @@ class LinuxDoBrowser:
     #     page.close()
     def click_one_topic(self, topic_url, current_index, total_topics):
         page = self.context.new_page()
-        page.goto(HOME_URL + topic_url)
+        full_url = HOME_URL + topic_url
+        page.goto(full_url)
         
         try:
             # 获取帖子标题
@@ -227,7 +228,7 @@ class LinuxDoBrowser:
             if not title:
                 title = "未知标题"
             
-            logger.info(f"[{current_index}/{total_topics}] 正在浏览: {title}")
+            logger.info(f"[{current_index}/{total_topics}] 正在浏览: {title} | URL: {full_url}")
             
             # 如果没有达到每日上限，才考虑点赞
             if not self.daily_limit_reached:
