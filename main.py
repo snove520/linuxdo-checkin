@@ -304,39 +304,42 @@ class LinuxDoBrowser:
                 info.append([project, current, requirement])
 
         username = os.environ.get("USERNAME", "未知用户")
-        # 使用 Markdown 格式输出
-        # print(f"# {username} \n 运行报告\n")
-        print(f"## {username}")
-
-        print("### 运行报告")
         
-        print("## Connect 信息")
+        # 使用更美观的 Markdown 格式输出
+        print("# 🤖 自动签到报告")
+        print(f"### 👤 执行用户：{username}\n")
+        
+        # Connect 信息部分
+        print("### 📊 Connect 数据")
         table_str = tabulate(info, headers=["项目", "当前", "要求"], tablefmt="github")
-        print(table_str)
+        print(table_str + "\n")
 
+        # 运行统计部分
+        print("### 📈 运行统计")
+        print("```")  # 使用代码块使统计信息更醒目
+        print(f"📖 浏览帖子：{self.browse_count} 篇")
+        print(f"👍 点赞帖子：{self.like_count} 篇")
+        
         # 计算运行时间
         elapsed_time = time.time() - self.start_time
         hours = int(elapsed_time // 3600)
         minutes = int((elapsed_time % 3600) // 60)
         seconds = int(elapsed_time % 60)
-
-        # 打印统计信息
-        print("\n## 运行统计")
-        print(f"- 共浏览帖子：{self.browse_count} 篇")
-        print(f"- 点赞帖子：{self.like_count} 篇")
-        print(f"- 用时：{hours}小时{minutes}分{seconds}秒")
+        print(f"⏱️ 运行用时：{hours}小时{minutes}分{seconds}秒")
+        print("```\n")
         
-        # 获取北京时间（UTC+8）
+        # 底部信息
+        print("---")  # 分隔线
+        
+        # 获取北京时间
         beijing_tz = pytz.timezone('Asia/Shanghai')
         beijing_time = datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
-        print(f"\n\n> 执行时间：{beijing_time}")
-        # 添加时间戳
-        # print(f"\n\n> 执行时间：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"\n⏰ 执行时间：`{beijing_time}`")
         
-        # 获取并添加一言
+        # 添加一言
         yiyan = self.get_yiyan()
-        # print("\n## 今日一言")
-        print(f"\n> {yiyan}\n")
+        print("\n### 📝 今日一言")
+        print(f"> {yiyan}")
 
         page.close()
 

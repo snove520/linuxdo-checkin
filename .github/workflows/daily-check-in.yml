@@ -60,7 +60,7 @@ jobs:
           -H "Content-Type: application/json" \
           -d "{
             \"token\": \"${{ env.PUSH_PLUS_TOKEN }}\",
-            \"title\": \"LINUX DO 每日签到状态：${STATUS}\",
+            \"title\": \"linux.do浏览：${STATUS}\",
             \"content\": \"${CONTENT}\",
             \"template\": \"markdown\"
           }"
