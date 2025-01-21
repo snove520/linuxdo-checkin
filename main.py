@@ -4,6 +4,7 @@ import time
 import functools
 import sys
 import requests
+import re
 
 from loguru import logger
 from playwright.sync_api import sync_playwright
@@ -278,66 +279,7 @@ class LinuxDoBrowser:
             return True
 
         try:
-            # 1. 首先检查是否有限制弹窗，但设置较短的超时时间
-            rate_limit_dialogs = [
-                # 频率限制弹窗
-                {
-                    'selector': '.dialog-content p:has-text("您执行此操作的次数过多")',
-                    'pattern': r'(\d+)\s*秒',
-                    'default_wait': 60,
-                    'message': "触发操作频率限制"
-                },
-                # 每日上限弹窗
-                {
-                    'selector': '.dialog-content p:has-text("您已经达到 24 小时点赞上限")',
-                    'pattern': r'(\d+)\s*分钟',
-                    'default_wait': 60 * 48,  # 默认等待48分钟
-                    'message': "达到每日点赞上限"
-                }
-            ]
-
-            # 检查是否有任何限制弹窗，使用较短的超时时间
-            for dialog in rate_limit_dialogs:
-                try:
-                    # 设置较短的超时时间（5秒）来检查弹窗
-                    limit_dialog = page.locator(dialog['selector']).first
-                    if limit_dialog and limit_dialog.is_visible(timeout=5000):  # 5秒超时
-                        dialog_text = limit_dialog.inner_text()
-                        
-                        # 尝试提取等待时间
-                        import re
-                        wait_match = re.search(dialog['pattern'], dialog_text)
-                        if wait_match:
-                            wait_time = int(wait_match.group(1))
-                            if '分钟' in dialog_text:
-                                wait_seconds = wait_time * 60
-                            else:
-                                wait_seconds = wait_time
-                        else:
-                            wait_seconds = dialog['default_wait']
-                        
-                        logger.warning(f"{dialog['message']}，需要等待 {wait_seconds} 秒")
-                        
-                        # 点击确定按钮关闭弹窗
-                        confirm_button = page.locator('.dialog-footer .btn-primary:has-text("确定")')
-                        if confirm_button.first:
-                            confirm_button.click()
-                            time.sleep(1)  # 等待弹窗关闭
-                        
-                        # 如果是每日上限，设置标记并返回
-                        if "24 小时点赞上限" in dialog_text:
-                            logger.warning("已达到每日点赞上限，后续帖子将不再尝试点赞")
-                            self.daily_limit_reached = True  # 设置每日上限标记
-                            return True  # 返回 True 因为这是预期的状态
-                        
-                        # 等待指定时间
-                        time.sleep(wait_seconds + 2)  # 多等待2秒以确保限制解除
-                        return False  # 返回 False 表示点赞失败需要重试
-                except Exception as e:
-                    logger.debug(f"检查限制弹窗失败: {str(e)}")
-                    continue  # 继续检查下一个弹窗
-
-            # 2. 检查是否已经点赞
+            # 1. 检查是否已经点赞
             already_liked_selectors = [
                 'button[title="移除此赞"]',
                 'button[title="删除此 heart 回应"]',
@@ -350,7 +292,7 @@ class LinuxDoBrowser:
                     logger.info("已经点过赞了")
                     return True
 
-            # 3. 查找未点赞的按钮
+            # 2. 查找未点赞的按钮
             like_button = None
             likes_count = 0
 
@@ -373,7 +315,7 @@ class LinuxDoBrowser:
                 logger.info("未找到点赞按钮")
                 return True  # 返回 True 因为这不是错误状态
 
-            # 4. 获取帖子的点赞数
+            # 3. 获取帖子的点赞数
             counter_selectors = [
                 '.reactions-counter',
                 '.discourse-reactions-counter .reactions-counter'
@@ -389,9 +331,9 @@ class LinuxDoBrowser:
                         break
             except Exception as e:
                 logger.debug(f"获取点赞数失败: {str(e)}")
-                return True  # 返回 True 因为这不是错误状态
+                return True
 
-            # 5. 根据点赞数决定点赞概率
+            # 4. 根据点赞数决定点赞概率
             if likes_count >= 50:  # 高赞帖子
                 probability = 0.9   # 90% 概率点赞
             elif likes_count >= 30:
@@ -401,10 +343,68 @@ class LinuxDoBrowser:
             else:
                 probability = 0.3   # 30% 基础概率
 
-            # 6. 执行点赞
+            # 5. 执行点赞
             if random.random() < probability:
                 logger.info(f"准备点赞(当前点赞数：{likes_count}，点赞概率：{probability:.0%})")
                 like_button.click()
+                time.sleep(1)  # 等待可能的弹窗出现
+
+                # 6. 点击后检查是否有限制弹窗
+                rate_limit_dialogs = [
+                    # 频率限制弹窗
+                    {
+                        'selector': '.dialog-content p:has-text("您执行此操作的次数过多")',
+                        'pattern': r'(\d+)\s*秒',
+                        'default_wait': 60,
+                        'message': "触发操作频率限制"
+                    },
+                    # 每日上限弹窗
+                    {
+                        'selector': '.dialog-content p:has-text("您已经达到 24 小时点赞上限")',
+                        'pattern': r'(\d+)\s*分钟',
+                        'default_wait': 60 * 48,  # 默认等待48分钟
+                        'message': "达到每日点赞上限"
+                    }
+                ]
+
+                # 检查是否有任何限制弹窗
+                for dialog in rate_limit_dialogs:
+                    try:
+                        limit_dialog = page.locator(dialog['selector']).first
+                        if limit_dialog and limit_dialog.is_visible(timeout=3000):  # 3秒超时
+                            dialog_text = limit_dialog.inner_text()
+                            
+                            # 点击确定按钮关闭弹窗
+                            confirm_button = page.locator('.dialog-footer .btn-primary:has-text("确定")')
+                            if confirm_button.first:
+                                confirm_button.click()
+                                time.sleep(1)  # 等待弹窗关闭
+                            
+                            # 如果是每日上限，设置标记并返回
+                            if "24 小时点赞上限" in dialog_text:
+                                logger.warning("已达到每日点赞上限，后续帖子将不再尝试点赞")
+                                self.daily_limit_reached = True  # 设置每日上限标记
+                                return True
+                            
+                            # 如果是频率限制，提取等待时间
+                            wait_match = re.search(dialog['pattern'], dialog_text)
+                            if wait_match:
+                                wait_time = int(wait_match.group(1))
+                                if '分钟' in dialog_text:
+                                    wait_seconds = wait_time * 60
+                                else:
+                                    wait_seconds = wait_time
+                            else:
+                                wait_seconds = dialog['default_wait']
+                            
+                            logger.warning(f"{dialog['message']}，需要等待 {wait_seconds} 秒")
+                            time.sleep(wait_seconds + 2)  # 多等待2秒以确保限制解除
+                            return False  # 返回 False 表示需要重试
+                    except Exception as e:
+                        logger.debug(f"检查限制弹窗失败: {str(e)}")
+                        continue
+
+                # 如果没有弹窗，说明点赞成功
                 self.like_count += 1
                 logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count}")
                 time.sleep(random.uniform(1, 2))
