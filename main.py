@@ -107,8 +107,28 @@ class LinuxDoBrowser:
         page.goto(HOME_URL + topic_url)
         
         try:
-            # 获取标题等信息
-            title = self.get_title(page)  # 假设您有这个方法获取标题
+            # 获取帖子标题
+            title = None
+            title_selectors = [
+                "#main-outlet .topic-title h1",
+                "h1 .fancy-title span[dir='auto']",
+                "#main-outlet h1",
+                ".topic-title",
+                ".title-wrapper h1 a",
+                ".title-wrapper h1 a .fancy-title span"
+            ]
+            
+            # 依次尝试不同的选择器
+            for selector in title_selectors:
+                title_element = page.locator(selector)
+                if title_element.count() > 0:
+                    title = title_element.inner_text().strip()
+                    if title:  # 如果成功获取到非空标题
+                        break
+            
+            if not title:
+                title = "未知标题"
+            
             logger.info(f"[{current_index}/{total_topics}] 正在浏览: {title}")
             
             if random.random() < 0.3:
