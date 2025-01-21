@@ -8,7 +8,8 @@ import requests
 from loguru import logger
 from playwright.sync_api import sync_playwright
 from tabulate import tabulate
-from datetime import datetime, timedelta
+from datetime import datetime
+import pytz
 
 
 def retry_decorator(retries=3):
@@ -253,7 +254,8 @@ class LinuxDoBrowser:
         print(f"- 用时：{hours}小时{minutes}分{seconds}秒")
         
         # 获取北京时间（UTC+8）
-        beijing_time = (datetime.now() + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M:%S')
+        beijing_tz = pytz.timezone('Asia/Shanghai')
+        beijing_time = datetime.now(beijing_tz).strftime('%Y-%m-%d %H:%M:%S')
         print(f"\n\n> 执行时间：{beijing_time}")
         # 添加时间戳
         # print(f"\n\n> 执行时间：{time.strftime('%Y-%m-%d %H:%M:%S')}")

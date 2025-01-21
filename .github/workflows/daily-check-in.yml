@@ -42,7 +42,7 @@ jobs:
             CONTENT=$(cat output.txt)
           else
             STATUS="❌ 失败"
-            CONTENT="## LINUX DO 签到失败\n\n请检查 GitHub Actions 日志以获取详细信息。\n\n[查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+            CONTENT="## Linux.do浏览失败\n\n请检查 GitHub Actions 日志以获取详细信息。\n\n[查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           fi
             
           curl -s "http://www.pushplus.plus/send" \
