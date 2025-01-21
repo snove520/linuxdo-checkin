@@ -266,16 +266,44 @@ class LinuxDoBrowser:
 
     def click_like(self, page):
         try:
-            # 专门查找未点赞的按钮
+            # 1. 首先检查是否有未点赞的按钮
             like_button = page.locator('.discourse-reactions-reaction-button[title="点赞此帖子"]').first
-            if like_button:
-                logger.info(f"找到未点赞的帖子，准备点赞 (当前已点赞: {self.like_count})")
+            if not like_button:
+                logger.info("帖子可能已经点过赞了")
+                return
+
+            # 2. 获取帖子的点赞数
+            likes_count = 0
+            try:
+                likes_element = page.locator('.discourse-reactions-counter').first
+                if likes_element:
+                    likes_text = likes_element.inner_text().strip()
+                    likes_count = int(''.join(filter(str.isdigit, likes_text)) or 0)
+                    logger.info(f"发现帖子，当前点赞数：{likes_count}")
+            except Exception as e:
+                logger.debug(f"获取点赞数失败: {str(e)}")
+                return
+
+            # 3. 根据点赞数决定点赞概率
+            if likes_count >= 50:  # 高赞帖子
+                probability = 0.9   # 90% 概率点赞
+            elif likes_count >= 30:
+                probability = 0.7   # 70% 概率点赞
+            elif likes_count >= 10:
+                probability = 0.5   # 50% 概率点赞
+            else:
+                probability = 0.3   # 30% 基础概率
+
+            # 4. 执行点赞
+            if random.random() < probability:
+                logger.info(f"准备点赞(当前点赞数：{likes_count}，点赞概率：{probability:.0%})")
                 like_button.click()
                 self.like_count += 1
                 logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count}")
                 time.sleep(random.uniform(1, 2))
             else:
-                logger.info("帖子可能已经点过赞了")
+                logger.info(f"跳过点赞(当前点赞数：{likes_count}，点赞概率：{probability:.0%})")
+
         except Exception as e:
             logger.error(f"点赞失败: {str(e)}")
 
