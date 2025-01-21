@@ -336,7 +336,7 @@ class LinuxDoBrowser:
         # 获取并添加一言
         yiyan = self.get_yiyan()
         # print("\n## 今日一言")
-        print(f"> {yiyan}\n")  # 添加一个空行
+        print(f"\n> {yiyan}\n")
 
         page.close()
 
