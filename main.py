@@ -279,29 +279,31 @@ class LinuxDoBrowser:
             return True
 
         try:
-            # 1. 检查是否已经点赞
+            # 1. 检查是否已经点赞（更精确的选择器）
+            already_liked = False
             already_liked_selectors = [
-                'button[title="移除此赞"]',
-                'button[title="删除此 heart 回应"]',
-                '.discourse-reactions-actions.has-reacted button.btn-toggle-reaction-like',
-                '.discourse-reactions-double-button .discourse-reactions-reaction-button button[title*="删除"]'
+                '.discourse-reactions-actions.has-reacted',  # 检查是否有已点赞的class
+                '.discourse-reactions-double-button button[title="删除此 heart 回应"]',  # 检查删除按钮
+                'button[title="移除此赞"]',  # 兼容其他可能的删除按钮
+                '.discourse-reactions-actions.has-reactions.has-reacted.has-used-main-reaction'  # 新增：第二种布局的已点赞状态
             ]
             
             for selector in already_liked_selectors:
                 if page.locator(selector).first:
-                    logger.info("已经点过赞了")
-                    return True
+                    already_liked = True
+                    break
+            
+            if already_liked:
+                logger.info("已经点过赞了")
+                return True
 
             # 2. 查找未点赞的按钮
             like_button = None
-            likes_count = 0
-
-            # 尝试不同的未点赞按钮选择器
             button_selectors = [
-                '.discourse-reactions-actions button[title="点赞此帖子"]',
-                '.discourse-reactions-double-button button[title="点赞此帖子"]',
-                '.discourse-reactions-actions:not(.has-reacted) button.btn-toggle-reaction-like',
-                '.discourse-reactions-double-button:not(.has-reacted) button.btn-toggle-reaction-like'
+                'button[title="点赞此帖子"]',  # 明确的点赞按钮
+                '.discourse-reactions-actions:not(.has-reacted) .btn-toggle-reaction-like',  # 未点赞状态的按钮
+                '.discourse-reactions-actions.has-reactions:not(.has-reacted) .btn-toggle-reaction-like',  # 新增：第二种布局的未点赞按钮
+                '.discourse-reactions-double-button .discourse-reactions-reaction-button button[title="点赞此帖子"]'  # 新增：更精确的未点赞按钮选择器
             ]
             
             # 查找点赞按钮
