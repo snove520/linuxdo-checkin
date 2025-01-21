@@ -8,6 +8,7 @@ import requests
 from loguru import logger
 from playwright.sync_api import sync_playwright
 from tabulate import tabulate
+from datetime import datetime, timedelta
 
 
 def retry_decorator(retries=3):
@@ -206,7 +207,7 @@ class LinuxDoBrowser:
             response = requests.get("https://v2.xxapi.cn/api/yiyan?type=hitokoto", headers=headers)
             if response.status_code == 200:
                 result = response.json()
-                if result.get("code") == "200":
+                if result.get("code") == 200:  # 修改这里：使用数字而不是字符串
                     return result.get("data")
             logger.warning("获取一言失败，API 返回：" + str(response.text))
         except Exception as e:
@@ -231,7 +232,9 @@ class LinuxDoBrowser:
         username = os.environ.get("USERNAME", "未知用户")
         # 使用 Markdown 格式输出
         # print(f"# {username} \n 运行报告\n")
-        print(f"# {username}  \n运行报告\n")
+        print(f"## {username}")
+
+        print("### 运行报告")
         
         print("## Connect 信息")
         table_str = tabulate(info, headers=["项目", "当前", "要求"], tablefmt="github")
@@ -249,12 +252,15 @@ class LinuxDoBrowser:
         print(f"- 点赞帖子：{self.like_count} 篇")
         print(f"- 用时：{hours}小时{minutes}分{seconds}秒")
         
+        # 获取北京时间（UTC+8）
+        beijing_time = (datetime.now() + timedelta(hours=8)).strftime('%Y-%m-%d %H:%M:%S')
+        print(f"\n\n> 执行时间：{beijing_time}")
         # 添加时间戳
-        print(f"\n\n> 执行时间：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+        # print(f"\n\n> 执行时间：{time.strftime('%Y-%m-%d %H:%M:%S')}")
         
         # 获取并添加一言
         yiyan = self.get_yiyan()
-        print("\n## 今日一言")
+        # print("\n## 今日一言")
         print(f"> {yiyan}")
 
         page.close()
