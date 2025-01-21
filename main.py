@@ -423,7 +423,7 @@ class LinuxDoBrowser:
                     if counter:
                         likes_text = counter.inner_text().strip()
                         likes_count = int(''.join(filter(str.isdigit, likes_text)) or 0)
-                        logger.info(f"发现帖子，当前点赞数：{likes_count}")
+                        logger.info(f"发现帖子，当前点赞数：{likes_count} | URL: {page.url}")
                         break
             except Exception as e:
                 logger.debug(f"获取点赞数失败: {str(e)}")
