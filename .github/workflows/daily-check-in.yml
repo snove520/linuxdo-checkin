@@ -49,7 +49,7 @@ jobs:
           -H "Content-Type: application/json" \
           -d "{
             \"token\": \"${{ env.PUSH_PLUS_TOKEN }}\",
-            \"title\": \"LINUX DO 运行：${STATUS}\",
+            \"title\": \"linux.do浏览帖子：${STATUS}\",
             \"content\": \"${CONTENT}\",
             \"template\": \"markdown\"
           }"

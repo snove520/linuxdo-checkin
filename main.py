@@ -214,7 +214,8 @@ class LinuxDoBrowser:
 
         username = os.environ.get("USERNAME", "未知用户")
         # 使用 Markdown 格式输出
-        print(f"# {username} 运行报告\n")
+        # print(f"# {username} \n 运行报告\n")
+        print(f"# {username}  \n运行报告\n")
         
         print("## Connect 信息")
         table_str = tabulate(info, headers=["项目", "当前", "要求"], tablefmt="github")
