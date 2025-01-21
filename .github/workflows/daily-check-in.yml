@@ -25,36 +25,42 @@ jobs:
           playwright install --with-deps firefox
 
       - name: Execute script
-        id: run_script
-        continue-on-error: true
         env:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
-          if python main.py > output.txt 2>&1; then
-            echo "script_status=success" >> "$GITHUB_OUTPUT"
-          else
-            echo "script_status=failure" >> "$GITHUB_OUTPUT"
-          fi
+          python main.py > output.txt
+        timeout-minutes: 30  # 设置超时为 30 分钟
 
       - name: Send PUSH+ Notification
         env:
           PUSH_PLUS_TOKEN: ${{ secrets.PUSH_PLUS_TOKEN }}
         if: always()
         run: |
-          if [ "${{ steps.run_script.outputs.script_status }}" = "success" ]; then
-            STATUS="✅ 成功"
-            CONTENT=$(cat output.txt || echo "签到完成")
+          # 检查输出文件是否存在且不为空
+          if [ -s output.txt ]; then
+            # 检查是否包含错误信息
+            if grep -q "ERROR" output.txt; then
+              STATUS="❌ 失败"
+              CONTENT="## 签到执行出现错误\n\n"
+              CONTENT+="请检查以下日志信息：\n\n"
+              CONTENT+="$(grep -B 1 -A 1 'ERROR' output.txt)\n\n"
+              CONTENT+="---\n\n完整日志请查看 GitHub Actions"
+            else
+              STATUS="✅ 成功"
+              CONTENT=$(cat output.txt)
+            fi
           else
             STATUS="❌ 失败"
-            CONTENT="签到脚本执行失败，请检查日志\n\n$(cat output.txt || echo '未能获取详细错误信息')"
+            CONTENT="签到脚本执行失败，未能获取输出信息。请检查 GitHub Actions 日志。"
           fi
           
+          # 发送通知
           curl -s "http://www.pushplus.plus/send" \
           -H "Content-Type: application/json" \
           -d "{
             \"token\": \"${{ env.PUSH_PLUS_TOKEN }}\",
-            \"title\": \"linux.do浏览帖子：${STATUS}\",
+            \"title\": \"LINUX DO 每日签到状态：${STATUS}\",
             \"content\": \"${CONTENT}\",
             \"template\": \"markdown\"
           }"
