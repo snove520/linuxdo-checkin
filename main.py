@@ -110,9 +110,27 @@ class LinuxDoBrowser:
                         continue
                 
                 # 检查是否登录成功
-                user_ele = self.page.locator("#current-user").first
-                if user_ele and user_ele.is_visible():
-                    username = user_ele.get_attribute("title") or "未知用户"
+                user_button = self.page.locator("#toggle-current-user").first
+                if user_button and user_button.is_visible():
+                    # 尝试从不同属性获取用户名
+                    username = None
+                    
+                    # 1. 尝试从 aria-label 获取用户名
+                    aria_label = user_button.get_attribute("aria-label")
+                    if aria_label and "的帐户" in aria_label:
+                        username = aria_label.replace(" 的帐户", "")
+                    
+                    # 2. 如果没有找到，尝试从头像的 title 属性获取
+                    if not username:
+                        avatar = user_button.locator("img.avatar").first
+                        if avatar:
+                            title = avatar.get_attribute("title")
+                            if title and "个人资料" in title:
+                                username = "未知用户"  # 这个 title 是固定文本，不包含用户名
+                    
+                    # 3. 如果还是没有找到，使用默认值
+                    username = username or "未知用户"
+                    
                     logger.success(f"登录成功！用户名: {username}")
                     return True
                 
