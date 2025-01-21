@@ -150,8 +150,17 @@ class LinuxDoBrowser:
             
             logger.info(f"[{current_index}/{total_topics}] 正在浏览: {title}")
             
-            if random.random() < 0.3:
+            # 根据已点赞数量动态调整点赞概率
+            if self.like_count < 5:  # 如果点赞数少于5个，提高点赞概率
+                like_probability = 0.5  # 50% 概率
+            elif self.like_count < 10:  # 如果点赞数在5-10之间
+                like_probability = 0.3  # 30% 概率
+            else:  # 如果已经点赞超过10个
+                like_probability = 0.1  # 降低到10%概率
+            
+            if random.random() < like_probability:
                 self.click_like(page)
+            
             self.browse_post(page)
             self.browse_count += 1
         except Exception as e:
@@ -260,10 +269,10 @@ class LinuxDoBrowser:
             # 专门查找未点赞的按钮
             like_button = page.locator('.discourse-reactions-reaction-button[title="点赞此帖子"]').first
             if like_button:
-                logger.info("找到未点赞的帖子，准备点赞")
+                logger.info(f"找到未点赞的帖子，准备点赞 (当前已点赞: {self.like_count})")
                 like_button.click()
-                self.like_count += 1  # 增加点赞计数
-                logger.info("点赞成功")
+                self.like_count += 1
+                logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count}")
                 time.sleep(random.uniform(1, 2))
             else:
                 logger.info("帖子可能已经点过赞了")
@@ -306,7 +315,7 @@ class LinuxDoBrowser:
         username = os.environ.get("USERNAME", "未知用户")
         
         # 使用更美观的 Markdown 格式输出
-        print("# 🤖 自动签到报告")
+        print("# 🤖 自动浏览报告")
         print(f"### 👤 执行用户：{username}\n")
         
         # Connect 信息部分
