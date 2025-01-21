@@ -387,7 +387,11 @@ class LinuxDoBrowser:
             # 2. 查找未点赞的按钮（更新选择器）
             like_button = None
             button_selectors = [
-                # 基础未点赞按钮
+                # 先尝试点击父元素
+                'div[title="点赞此帖子"].discourse-reactions-reaction-button',
+                # 双按钮布局的父元素
+                '.discourse-reactions-double-button div[title="点赞此帖子"].discourse-reactions-reaction-button',
+                # 如果父元素不可用，再尝试按钮本身
                 'button[title="点赞此帖子"]',
                 # 带有反应状态的未点赞按钮
                 '.discourse-reactions-actions.has-reactions:not(.has-reacted) button[title="点赞此帖子"]',
@@ -395,6 +399,7 @@ class LinuxDoBrowser:
                 '.discourse-reactions-double-button .discourse-reactions-reaction-button button[title="点赞此帖子"]',
                 # 基础点赞按钮类
                 'button.btn-toggle-reaction-like[title="点赞此帖子"]',
+                '.discourse-reactions-double-button button[title="点赞此帖子"]',
                 # 可切换反应的未点赞按钮
                 '.discourse-reactions-actions.has-reactions.can-toggle-reaction:not(.has-reacted) .btn-toggle-reaction-like'
             ]
@@ -414,20 +419,31 @@ class LinuxDoBrowser:
             # 3. 获取帖子的点赞数
             counter_selectors = [
                 '.reactions-counter',
-                '.discourse-reactions-counter .reactions-counter'
+                '.discourse-reactions-counter .reactions-counter',
+                '#discourse-reactions-counter-*-right',  # 添加新的选择器
+                '#discourse-reactions-counter-*-left'    # 添加新的选择器
             ]
 
             try:
+                likes_count = 0  # 默认值
                 for selector in counter_selectors:
                     counter = page.locator(selector).first
-                    if counter:
-                        likes_text = counter.inner_text().strip()
-                        likes_count = int(''.join(filter(str.isdigit, likes_text)) or 0)
-                        logger.info(f"发现帖子，当前点赞数：{likes_count} | URL: {page.url}")
-                        break
+                    if counter and counter.is_visible():
+                        try:
+                            likes_text = counter.inner_text().strip()
+                            if likes_text:  # 如果有文本
+                                likes_count = int(''.join(filter(str.isdigit, likes_text)) or 0)
+                                logger.info(f"发现帖子，当前点赞数：{likes_count} | URL: {page.url}")
+                                break
+                        except:
+                            continue
+                
+                # 如果所有选择器都没找到点赞数，设为0并继续
+                if not likes_count:
+                    logger.debug(f"未找到点赞数，默认为0 | URL: {page.url}")
             except Exception as e:
                 logger.debug(f"获取点赞数失败: {str(e)}")
-                return True
+                likes_count = 0  # 设置默认值
 
             # 4. 根据点赞数决定点赞概率
             if likes_count >= 50:  # 高赞帖子
