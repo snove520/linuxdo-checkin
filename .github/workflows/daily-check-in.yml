@@ -2,17 +2,17 @@ name: Daily Check-in
 
 on:
   schedule:
-    # - cron: '0 */12 * * *'  # 每12小时执行一次
-    - cron: '0 21-23,0-16/2 * * *'  # 北京时间 5:00-24:00 每2小时运行一次
-    - cron: '0 17-20/4 * * *'       # 北京时间 1:00-4:00 每4小时运行一次
+    - cron: '0 21-23,0-16/2 * * *'  # 每2小时触发一次（北京时间 5:00-24:00）
+    - cron: '0 17-20/4 * * *'       # 每4小时触发一次（北京时间 1:00-4:00）
   workflow_dispatch:
 
 jobs:
   run_script:
     runs-on: ubuntu-22.04
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -30,6 +30,7 @@ jobs:
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
           python main.py > output.txt
+        timeout-minutes: 30  # 设置超时为 30 分钟
 
       - name: Send PUSH+ Notification
         env:
@@ -38,14 +39,12 @@ jobs:
         run: |
           if [ ${{ job.status }} == 'success' ]; then
             STATUS="✅ 成功"
-            # 直接读取文件内容，保持换行符
             CONTENT=$(cat output.txt)
           else
             STATUS="❌ 失败"
-            CONTENT="## LINUX DO 签到失败\n\n请检查 GitHub Actions 日志以获取详细信息。"
+            CONTENT="## LINUX DO 签到失败\n\n请检查 GitHub Actions 日志以获取详细信息。\n\n[查看日志](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           fi
             
-          # 发送请求
           curl -s "http://www.pushplus.plus/send" \
           -H "Content-Type: application/json" \
           -d "{
