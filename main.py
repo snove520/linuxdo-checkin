@@ -359,14 +359,23 @@ class LinuxDoBrowser:
             # 1. 检查是否已经点赞（更精确的选择器）
             already_liked = False
             already_liked_selectors = [
-                '.discourse-reactions-actions.has-reacted',  # 检查是否有已点赞的class
-                '.discourse-reactions-double-button button[title="删除此 heart 回应"]',  # 检查删除按钮
-                'button[title="移除此赞"]',  # 兼容其他可能的删除按钮
-                '.discourse-reactions-actions.has-reactions.has-reacted.has-used-main-reaction'  # 新增：第二种布局的已点赞状态
+                # 基础已点赞状态
+                '.discourse-reactions-actions.has-reacted.has-reactions',
+                # 带有主要反应的已点赞状态
+                '.discourse-reactions-actions.has-reactions.has-reacted.has-used-main-reaction',
+                # 删除按钮状态
+                '.discourse-reactions-double-button button[title="删除此 heart 回应"]',
+                'button[title="移除此赞"]',
+                # 自定义表情状态
+                '.discourse-reactions-actions.custom-reaction-used.has-reactions.has-reacted',
+                # 组合状态
+                '.discourse-reactions-actions.has-reactions.has-reacted.has-used-main-reaction.can-toggle-reaction'
             ]
             
             for selector in already_liked_selectors:
-                if page.locator(selector).first:
+                element = page.locator(selector).first
+                if element and element.is_visible():  # 添加可见性检查
+                    logger.debug(f"检测到已点赞状态: {selector}")
                     already_liked = True
                     break
             
@@ -374,19 +383,26 @@ class LinuxDoBrowser:
                 logger.info("已经点过赞了")
                 return True
 
-            # 2. 查找未点赞的按钮
+            # 2. 查找未点赞的按钮（更新选择器）
             like_button = None
             button_selectors = [
-                'button[title="点赞此帖子"]',  # 明确的点赞按钮
-                '.discourse-reactions-actions:not(.has-reacted) .btn-toggle-reaction-like',  # 未点赞状态的按钮
-                '.discourse-reactions-actions.has-reactions:not(.has-reacted) .btn-toggle-reaction-like',  # 新增：第二种布局的未点赞按钮
-                '.discourse-reactions-double-button .discourse-reactions-reaction-button button[title="点赞此帖子"]'  # 新增：更精确的未点赞按钮选择器
+                # 基础未点赞按钮
+                'button[title="点赞此帖子"]',
+                # 带有反应状态的未点赞按钮
+                '.discourse-reactions-actions.has-reactions:not(.has-reacted) button[title="点赞此帖子"]',
+                # 双按钮布局的未点赞按钮
+                '.discourse-reactions-double-button .discourse-reactions-reaction-button button[title="点赞此帖子"]',
+                # 基础点赞按钮类
+                'button.btn-toggle-reaction-like[title="点赞此帖子"]',
+                # 可切换反应的未点赞按钮
+                '.discourse-reactions-actions.has-reactions.can-toggle-reaction:not(.has-reacted) .btn-toggle-reaction-like'
             ]
             
             # 查找点赞按钮
             for selector in button_selectors:
                 button = page.locator(selector).first
-                if button:
+                if button and button.is_visible():  # 添加可见性检查
+                    logger.debug(f"找到点赞按钮: {selector}")
                     like_button = button
                     break
 
