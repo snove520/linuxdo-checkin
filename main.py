@@ -44,6 +44,7 @@ class LinuxDoBrowser:
     def __init__(self) -> None:
         self.browse_count = 0  # 浏览帖子计数
         self.like_count = 0    # 点赞计数
+        self.daily_limit_reached = False  # 新增：标记是否达到每日上限
         self.start_time = time.time()  # 记录开始时间
 
         self.pw = sync_playwright().start()
@@ -150,16 +151,22 @@ class LinuxDoBrowser:
             
             logger.info(f"[{current_index}/{total_topics}] 正在浏览: {title}")
             
-            # 根据已点赞数量动态调整点赞概率
-            if self.like_count < 5:  # 如果点赞数少于5个，提高点赞概率
-                like_probability = 0.5  # 50% 概率
-            elif self.like_count < 10:  # 如果点赞数在5-10之间
-                like_probability = 0.3  # 30% 概率
-            else:  # 如果已经点赞超过10个
-                like_probability = 0.1  # 降低到10%概率
-            
-            if random.random() < like_probability:
-                self.click_like(page)
+            # 如果没有达到每日上限，才考虑点赞
+            if not self.daily_limit_reached:
+                # 根据已点赞数量动态调整点赞概率
+                if self.like_count < 5:  # 如果点赞数少于5个，提高点赞概率
+                    like_probability = 0.5  # 50% 概率
+                elif self.like_count < 10:  # 如果点赞数在5-10之间
+                    like_probability = 0.3  # 30% 概率
+                else:  # 如果已经点赞超过10个
+                    like_probability = 0.1  # 降低到10%概率
+                
+                if random.random() < like_probability:
+                    # 最多重试3次
+                    for attempt in range(3):
+                        if self.click_like(page):
+                            break
+                        logger.info(f"第 {attempt + 1} 次点赞尝试失败，准备重试...")
             
             self.browse_post(page)
             self.browse_count += 1
@@ -265,26 +272,121 @@ class LinuxDoBrowser:
         self.print_connect_info()
 
     def click_like(self, page):
-        try:
-            # 1. 首先检查是否有未点赞的按钮
-            like_button = page.locator('.discourse-reactions-reaction-button[title="点赞此帖子"]').first
-            if not like_button:
-                logger.info("帖子可能已经点过赞了")
-                return
+        # 如果已经达到每日上限，直接返回
+        if self.daily_limit_reached:
+            logger.info("已达到每日点赞上限，跳过点赞")
+            return True
 
-            # 2. 获取帖子的点赞数
+        try:
+            # 1. 首先检查是否有限制弹窗
+            rate_limit_dialogs = [
+                # 频率限制弹窗
+                {
+                    'selector': '.dialog-content p:has-text("您执行此操作的次数过多")',
+                    'pattern': r'(\d+)\s*秒',
+                    'default_wait': 60,
+                    'message': "触发操作频率限制"
+                },
+                # 每日上限弹窗
+                {
+                    'selector': '.dialog-content p:has-text("您已经达到 24 小时点赞上限")',
+                    'pattern': r'(\d+)\s*分钟',
+                    'default_wait': 60 * 48,  # 默认等待48分钟
+                    'message': "达到每日点赞上限"
+                }
+            ]
+
+            # 检查是否有任何限制弹窗
+            for dialog in rate_limit_dialogs:
+                limit_dialog = page.locator(dialog['selector'])
+                if limit_dialog.first:
+                    dialog_text = limit_dialog.inner_text()
+                    
+                    # 尝试提取等待时间
+                    import re
+                    wait_match = re.search(dialog['pattern'], dialog_text)
+                    if wait_match:
+                        wait_time = int(wait_match.group(1))
+                        if '分钟' in dialog_text:
+                            wait_seconds = wait_time * 60
+                        else:
+                            wait_seconds = wait_time
+                    else:
+                        wait_seconds = dialog['default_wait']
+                    
+                    logger.warning(f"{dialog['message']}，需要等待 {wait_seconds} 秒")
+                    
+                    # 点击确定按钮关闭弹窗
+                    confirm_button = page.locator('.dialog-footer .btn-primary:has-text("确定")')
+                    if confirm_button.first:
+                        confirm_button.click()
+                        time.sleep(1)  # 等待弹窗关闭
+                    
+                    # 如果是每日上限，设置标记并返回
+                    if "24 小时点赞上限" in dialog_text:
+                        logger.warning("已达到每日点赞上限，后续帖子将不再尝试点赞")
+                        self.daily_limit_reached = True  # 设置每日上限标记
+                        return True  # 返回 True 因为这是预期的状态
+                    
+                    # 等待指定时间
+                    time.sleep(wait_seconds + 2)  # 多等待2秒以确保限制解除
+                    return False  # 返回 False 表示点赞失败需要重试
+
+            # 2. 检查是否已经点赞
+            already_liked_selectors = [
+                'button[title="移除此赞"]',
+                'button[title="删除此 heart 回应"]',
+                '.discourse-reactions-actions.has-reacted button.btn-toggle-reaction-like',
+                '.discourse-reactions-double-button .discourse-reactions-reaction-button button[title*="删除"]'
+            ]
+            
+            for selector in already_liked_selectors:
+                if page.locator(selector).first:
+                    logger.info("已经点过赞了")
+                    return True
+
+            # 3. 查找未点赞的按钮
+            like_button = None
             likes_count = 0
+
+            # 尝试不同的未点赞按钮选择器
+            button_selectors = [
+                '.discourse-reactions-actions button[title="点赞此帖子"]',
+                '.discourse-reactions-double-button button[title="点赞此帖子"]',
+                '.discourse-reactions-actions:not(.has-reacted) button.btn-toggle-reaction-like',
+                '.discourse-reactions-double-button:not(.has-reacted) button.btn-toggle-reaction-like'
+            ]
+            
+            # 查找点赞按钮
+            for selector in button_selectors:
+                button = page.locator(selector).first
+                if button:
+                    like_button = button
+                    break
+
+            if not like_button:
+                logger.info("未找到点赞按钮")
+                return True  # 返回 True 因为这不是错误状态
+
+            # 4. 获取帖子的点赞数
+            counter_selectors = [
+                '.reactions-counter',
+                '.discourse-reactions-counter .reactions-counter'
+            ]
+
             try:
-                likes_element = page.locator('.discourse-reactions-counter').first
-                if likes_element:
-                    likes_text = likes_element.inner_text().strip()
-                    likes_count = int(''.join(filter(str.isdigit, likes_text)) or 0)
-                    logger.info(f"发现帖子，当前点赞数：{likes_count}")
+                for selector in counter_selectors:
+                    counter = page.locator(selector).first
+                    if counter:
+                        likes_text = counter.inner_text().strip()
+                        likes_count = int(''.join(filter(str.isdigit, likes_text)) or 0)
+                        logger.info(f"发现帖子，当前点赞数：{likes_count}")
+                        break
             except Exception as e:
                 logger.debug(f"获取点赞数失败: {str(e)}")
-                return
+                return True  # 返回 True 因为这不是错误状态
 
-            # 3. 根据点赞数决定点赞概率
+            # 5. 根据点赞数决定点赞概率
             if likes_count >= 50:  # 高赞帖子
                 probability = 0.9   # 90% 概率点赞
             elif likes_count >= 30:
@@ -294,7 +396,7 @@ class LinuxDoBrowser:
             else:
                 probability = 0.3   # 30% 基础概率
 
-            # 4. 执行点赞
+            # 6. 执行点赞
             if random.random() < probability:
                 logger.info(f"准备点赞(当前点赞数：{likes_count}，点赞概率：{probability:.0%})")
                 like_button.click()
@@ -304,8 +406,11 @@ class LinuxDoBrowser:
             else:
                 logger.info(f"跳过点赞(当前点赞数：{likes_count}，点赞概率：{probability:.0%})")
 
+            return True
+
         except Exception as e:
             logger.error(f"点赞失败: {str(e)}")
+            return False
 
     
 
