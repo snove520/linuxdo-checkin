@@ -543,9 +543,9 @@ class LinuxDoBrowser:
                     # 获取楼层号
                     try:
                         floor_number = page.locator('.linuxfloor').first.inner_text().strip('#')
-                        logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 当前帖子点赞数: {current_likes} | 楼层: {floor_number}")
+                        logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 点赞前数量: {likes_count} -> 点赞后数量: {current_likes} | 楼层: {floor_number}")
                     except:
-                        logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 当前帖子点赞数: {current_likes}")
+                        logger.success(f"点赞成功 ✨ 总点赞数: {self.like_count} | 点赞前数量: {likes_count} -> 点赞后数量: {current_likes}")
                     time.sleep(random.uniform(1, 2))
                 finally:
                     # 恢复页面滚动
