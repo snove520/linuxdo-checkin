@@ -197,6 +197,22 @@ class LinuxDoBrowser:
 
     
 
+    def get_yiyan(self):
+        """获取一言"""
+        try:
+            headers = {
+                'User-Agent': 'xiaoxiaoapi/1.0.0 (https://xxapi.cn)'
+            }
+            response = requests.get("https://v2.xxapi.cn/api/yiyan?type=hitokoto", headers=headers)
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("code") == "200":
+                    return result.get("data")
+            logger.warning("获取一言失败，API 返回：" + str(response.text))
+        except Exception as e:
+            logger.error(f"获取一言失败: {str(e)}")
+        return "API 访问失败，未能获取一言"
+    
     def print_connect_info(self):
         logger.info("获取连接信息")
         page = self.context.new_page()
@@ -235,6 +251,11 @@ class LinuxDoBrowser:
         
         # 添加时间戳
         print(f"\n\n> 执行时间：{time.strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        # 获取并添加一言
+        yiyan = self.get_yiyan()
+        print("\n## 今日一言")
+        print(f"> {yiyan}")
 
         page.close()
 
