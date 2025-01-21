@@ -421,7 +421,9 @@ class LinuxDoBrowser:
                 '.reactions-counter',
                 '.discourse-reactions-counter .reactions-counter',
                 '#discourse-reactions-counter-*-right',  # 添加新的选择器
-                '#discourse-reactions-counter-*-left'    # 添加新的选择器
+                '#discourse-reactions-counter-*-left',    # 添加新的选择器
+                '[id^="discourse-reactions-counter-"][id$="-right"] .reactions-counter',  # 使用属性选择器
+                '[id^="discourse-reactions-counter-"][id$="-left"] .reactions-counter'    # 使用属性选择器
             ]
 
             try:
