@@ -25,16 +25,16 @@ jobs:
           playwright install --with-deps firefox
 
       - name: Execute script
-        id: run_script  # 添加 ID 以便后续引用
-        continue-on-error: true  # 允许脚本失败继续执行
+        id: run_script
+        continue-on-error: true
         env:
           USERNAME: ${{ secrets.USERNAME }}
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
           if python main.py > output.txt 2>&1; then
-            echo "status=success" >> $GITHUB_OUTPUT
+            echo "script_status=success" >> "$GITHUB_OUTPUT"
           else
-            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "script_status=failure" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Send PUSH+ Notification
@@ -42,7 +42,7 @@ jobs:
           PUSH_PLUS_TOKEN: ${{ secrets.PUSH_PLUS_TOKEN }}
         if: always()
         run: |
-          if [ "${{ steps.run_script.outputs.status }}" = "success" ]; then
+          if [ "${{ steps.run_script.outputs.script_status }}" = "success" ]; then
             STATUS="✅ 成功"
             CONTENT=$(cat output.txt || echo "签到完成")
           else
