@@ -65,8 +65,8 @@
 
 ## 自动更新
 默认每天自动从上游同步更新。第一次需要手动运行一次。
-![alt text](image.png)
-![alt text](image-1.png)
+![alt text](/images/image.png)
+![alt text](/images/image-1.png)
 ## 注意事项
 1. 请勿滥用，保持合理的使用频率
 2. 建议启用自动更新以获得最新功能和修复
