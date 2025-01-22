@@ -71,3 +71,19 @@
 1. 请勿滥用，保持合理的使用频率
 2. 建议启用自动更新以获得最新功能和修复
 3. 如遇到问题，可以查看 Actions 日志或等待 Plus Push 通知
+
+## 致谢
+本项目基于 [doveppp/linuxdo-checkin](https://github.com/doveppp/linuxdo-checkin) 开发，感谢原作者的贡献。
+
+主要改进：
+- 原作者的代码非常完善且健壮，本项目在此基础上：
+  - 简化了配置流程
+  - 使用 Plus Push 替代 Telegram 通知
+  - 优化了部分代码结构
+  - 更新了文档说明
+
+特别感谢 [@doveppp](https://github.com/doveppp) 提供的优秀项目！如果您觉得这个项目对您有帮助，欢迎：
+- ⭐ Star 本项目
+- 🔄 Fork 并优化代码
+
+注：本项目仅用于学习交流，请勿滥用。如有侵权请联系删除。
