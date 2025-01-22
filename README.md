@@ -71,3 +71,12 @@
 1. 请勿滥用，保持合理的使用频率
 2. 建议启用自动更新以获得最新功能和修复
 3. 如遇到问题，可以查看 Actions 日志或等待 Plus Push 通知
+
+## 致谢
+本项目基于 [doveppp/linuxdo-checkin](https://github.com/doveppp/linuxdo-checkin) 开发，感谢原作者的贡献。
+
+主要改进：
+- 添加了自动点赞功能
+- 使用 Plus Push 替代 Telegram 通知
+- 优化了运行时间策略
+- 增加了更详细的日志输出
