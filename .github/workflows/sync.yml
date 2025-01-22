@@ -22,7 +22,7 @@ jobs:
             target_repo_token: ${{ secrets.GITHUB_TOKEN }}
             target_sync_branch: main
             upstream_sync_branch: main
-            upstream_sync_repo: doveppp/linuxdo-checkin
+            upstream_sync_repo: 2754026865/linuxdo-checkin
 
             # Set test_mode true during manual dispatch to run tests instead of the true action!!
             test_mode: false
