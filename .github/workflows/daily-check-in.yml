@@ -36,9 +36,9 @@ jobs:
           python main.py > output.txt
         timeout-minutes: 30  # 设置超时为 30 分钟
 
-      - name: Send PUSH+ Notification
+      - name: Send WXpusher Notification
         env:
-          PUSH_PLUS_TOKEN: ${{ secrets.PUSH_PLUS_TOKEN }}
+          WXPUSHER_APP_TOKEN: ${{ secrets.WXPUSHER_APP_TOKEN }}
         if: always()
         run: |
           # 检查输出文件是否存在且不为空
@@ -60,14 +60,16 @@ jobs:
           fi
           
           # 发送通知
-          curl -s "http://www.pushplus.plus/send" \
-          -H "Content-Type: application/json" \
-          -d "{
-            \"token\": \"${{ env.PUSH_PLUS_TOKEN }}\",
-            \"title\": \"linux.do浏览：${STATUS}\",
-            \"content\": \"${CONTENT}\",
-            \"template\": \"markdown\"
-          }"
+          curl -s "https://wxpusher.zjiecode.com/api/send/message" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"appToken\": \"${{ env.WXPUSHER_APP_TOKEN }}\",
+              \"content\": \"${CONTENT}\",
+              \"summary\": \"linux.do浏览：${STATUS}\",
+              \"contentType\": 3,
+              \"topicIds\": [32643],
+              \"verifyPay\": false
+            }"
 
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2
