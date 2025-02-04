@@ -8,7 +8,7 @@
 - 自动浏览帖子
 - 自动点赞（可选）
 - 每天在 GitHub Actions 中自动运行
-- Plus Push 通知运行结果
+- WxPusher 通知运行结果
 
 ## 如何使用
 本节介绍在 GitHub Actions 中如何使用。在进行之前需要先 fork 本项目。
@@ -23,12 +23,12 @@
 5. 添加以下变量：
    - `USERNAME`：你的 LinuxDo 用户名或邮箱
    - `PASSWORD`：你的 LinuxDo 密码
-   - `PUSH_PLUS_TOKEN`：Plus Push 的 token（可选，用于推送通知）
+   - `WXPUSHER_APP_TOKEN`：WxPusher 的 apptoken（可选，用于推送通知）
 
-### Plus Push 通知配置
-1. 访问 [Plus Push](https://www.pushplus.plus/) 官网
-2. 登录并获取你的 token
-3. 将 token 添加到 GitHub Secrets 中的 `PUSH_PLUS_TOKEN`
+- ### Plus Push 通知配置
+- 1. 访问 [Plus Push](https://www.pushplus.plus/) 官网
+- 2. 登录并获取你的 token
+- 3. 将 token 添加到 GitHub Secrets 中的 `PUSH_PLUS_TOKEN`
 
 未配置 PUSH_PLUS_TOKEN 时将自动跳过通知功能，不影响签到。
 
@@ -56,8 +56,8 @@
 （新号可能这里为空，多挂几天就有了）
 ![image](https://github.com/user-attachments/assets/853549a5-b11d-4d5a-9284-7ad2f8ea698b)
 
-### Plus Push 通知
-配置 PUSH_PLUS_TOKEN 后，每次运行结果都会通过 Plus Push 推送到你的设备上，包括：
+### WxPusher 通知
+配置 WXPUSHER_APP_TOKEN 后，每次运行结果都会通过 WxPusher 推送到你的设备上，包括：
 - 签到状态
 - 浏览帖子数量
 - 点赞数量（如果启用）
@@ -78,7 +78,7 @@
 主要改进：
 - 原作者的代码非常完善且健壮，本项目在此基础上：
   - 简化了配置流程
-  - 使用 Plus Push 替代 Telegram 通知
+  - 使用 WxPusher 替代 Telegram 通知
   - 优化了部分代码结构
   - 更新了文档说明
 
