@@ -25,12 +25,13 @@
    - `PASSWORD`：你的 LinuxDo 密码
    - `WXPUSHER_APP_TOKEN`：WxPusher 的 apptoken（可选，用于推送通知）
 
-- ### Plus Push 通知配置
-- 1. 访问 [Plus Push](https://www.pushplus.plus/) 官网
-- 2. 登录并获取你的 token
-- 3. 将 token 添加到 GitHub Secrets 中的 `PUSH_PLUS_TOKEN`
+ ### WxPusher 通知配置(此部分自行配置)
+ 1. 访问 [WxPusher](https://wxpusher.com/) 官网
+ 2. 登录创建应用并获取你的 APPTOKEN
+ 3. 将 APPTOKEN 添加到 GitHub Secrets 中的 `WXPUSHER_APP_TOKEN`
+ 4. 将UIDS......
 
-未配置 PUSH_PLUS_TOKEN 时将自动跳过通知功能，不影响签到。
+未配置 WXPUSHER_APP_TOKEN 时将自动跳过通知功能，不影响签到。
 
 ### GitHub Actions 自动运行
 此项目会在以下时间自动运行签到脚本：
